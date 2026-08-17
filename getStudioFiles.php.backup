@@ -1,0 +1,124 @@
+<?php
+include('../mysql_config.php');
+header('Content-Type: application/json');
+// error_reporting(0);
+
+#disable warnings
+error_reporting(E_ERROR | E_PARSE);
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check for connection errors
+if ($conn->connect_error) {
+    die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
+}
+
+$perPage = 100;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $perPage;
+$dateFilter = isset($_GET['date']) ? $_GET['date'] : '';
+
+$whereClause = "WHERE m.added = 1";
+if (!empty($dateFilter)) {
+    $dateFilterEscaped = $conn->real_escape_string($dateFilter);
+    $whereClause .= " AND m.m_file LIKE '%$dateFilterEscaped%'";
+}
+
+// First, retrieve the basic data from matched_transcriptions
+$sql = "SELECT m.id, m.m_transcription, m.zOg, m.l_file, m.m_file, m.r_file, m.a_file, m.b_file 
+        FROM matched_transcriptions m
+        $whereClause
+        ORDER BY m.id ASC 
+        LIMIT $perPage OFFSET $offset";
+$result = $conn->query($sql);
+
+// Get total rows for pagination
+$totalSql = "SELECT COUNT(*) as total FROM matched_transcriptions m $whereClause";
+$totalResult = $conn->query($totalSql);
+$totalRow = $totalResult->fetch_assoc();
+$totalRows = $totalRow['total'];
+$totalPages = ceil($totalRows / $perPage);
+
+// Get unique dates for the select menu
+$dateSql = "SELECT DISTINCT SUBSTRING(m.m_file, 2, 8) as date FROM matched_transcriptions m WHERE m.added = 1 ORDER BY date DESC";
+$dateResult = $conn->query($dateSql);
+
+$dates = [];
+if ($dateResult->num_rows > 0) {
+    while ($dateRow = $dateResult->fetch_assoc()) {
+        $dates[] = $dateRow['date'];
+    }
+}
+
+$response = [
+    'videos' => [],
+    'pagination' => [
+        'currentPage' => $page,
+        'totalPages' => $totalPages
+    ],
+    'dates' => $dates
+];
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $videoData = [
+            'm_transcription' => htmlspecialchars($row['m_transcription']),
+            'glos' => '',
+            'files' => []
+        ];
+
+        // Determine the type and fetch 'glos' accordingly
+        $type = $row['zOg'];
+        $m_transcription_id = $conn->real_escape_string($row['m_transcription']);
+
+        if ($type == 'Glos' || $type == 'glos') {
+            $glosSql = "SELECT glos FROM form_data WHERE id = '$m_transcription_id'";
+        } elseif ($type == 'nmm') {
+            $glosSql = "SELECT glos FROM nmm_data WHERE id = '$m_transcription_id'";
+        } elseif ($type == 'Zin') {
+            $glosSql = "SELECT zinArray FROM sentences WHERE id = '$m_transcription_id'";
+        }
+     elseif ($type == 'extern') {
+        $glosSql = "SELECT glos FROM form_data WHERE id = '$m_transcription_id' AND extern='1'";
+    } 
+     else {
+            $glosSql = "";
+        }
+
+        if (!empty($glosSql)) {
+            $glosResult = $conn->query($glosSql);
+            if ($glosResult && $glosResult->num_rows > 0) {
+                $glosRow = $glosResult->fetch_assoc();
+                if($type == 'Zin') {
+                    $glosRow = json_decode($glosRow['zinArray'], true);
+                    $glos = '';
+                    foreach($glosRow as $glo) {
+                        $glos .= $glo . " ";
+                    }
+                    $videoData['glos'] = htmlspecialchars($glos) . "   " .htmlspecialchars($type);
+                } else
+                {
+                    $videoData['glos'] = htmlspecialchars($glosRow['glos']) . "   " .htmlspecialchars($type);
+                }
+            } else {
+                $videoData['glos'] = '';
+            }
+        }
+
+        // Process files
+        $files = ['l_file', 'm_file', 'r_file', 'a_file', 'b_file'];
+        foreach ($files as $file) {
+            if (!empty($row[$file])) {
+                $filePath = str_replace('.wav', '.mp4', $row[$file]);
+                $videoData['files'][] = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/" . $filePath;
+            }
+        }
+
+        $response['videos'][] = $videoData;
+    }
+}
+
+echo json_encode($response);
+
+$conn->close();
+?>

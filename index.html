@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/userProtect.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Index — Sign Language Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #151517;
+            --bg-tertiary: #1e1e21;
+            --accent-gold: #D4A373;
+            --accent-gold-dim: #8B6F47;
+            --text-primary: #E8E6E3;
+            --text-secondary: #9B9896;
+            --text-muted: #6B6866;
+            --border-subtle: rgba(212, 163, 115, 0.15);
+            --shadow-soft: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header */
+        header {
+            padding: 3rem 0 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* Sticky Filters */
+        .filters-container {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(10, 10, 11, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-subtle);
+            animation: slideInFromTop 0.6s ease-out 0.2s both;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            max-width: 800px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .custom-select {
+            position: relative;
+        }
+
+        .custom-select select {
+            width: 100%;
+            padding: 0.85rem 3rem 0.85rem 1.2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            appearance: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-select select:hover {
+            border-color: var(--accent-gold-dim);
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+        }
+
+        .custom-select select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.1);
+        }
+
+        .custom-select::after {
+            content: '';
+            position: absolute;
+            right: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--accent-gold);
+            pointer-events: none;
+            transition: transform 0.3s ease;
+        }
+
+        .custom-select select:focus + ::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        /* Video Grid */
+        #videoGrid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .video-row {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.2rem;
+            display: grid;
+            grid-template-columns: 280px repeat(5, 1fr);
+            gap: 1rem;
+            min-height: 240px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-row::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .video-row:hover {
+            border-color: var(--accent-gold-dim);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--shadow-soft);
+        }
+
+        .video-row:hover::before {
+            opacity: 1;
+        }
+
+        .video-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: 1rem;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .video-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .video-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .video-col {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .video-col::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .video-col:hover::after {
+            border-color: var(--accent-gold-dim);
+        }
+
+        .video-col img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .video-col:hover img {
+            transform: scale(1.05);
+        }
+
+        .video-col video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Changed from 'cover' to 'contain' to show full video without cropping */
+            background: var(--bg-tertiary); /* Background color for letterboxing */
+            z-index: 2;
+        }
+
+        /* Loading Indicator */
+        .loading-indicator {
+            text-align: center;
+            padding: 6rem 2rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1.5rem;
+            border: 3px solid var(--bg-tertiary);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+
+        .loading-indicator p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* Error States */
+        .alert {
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 1px solid;
+            animation: fadeInScale 0.4s ease-out;
+        }
+
+        .alert-danger {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.3);
+            color: #FCA5A5;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #FCD34D;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #93C5FD;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            margin: 4rem 0 3rem;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+
+        .page-item {
+            display: block;
+        }
+
+        .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            height: 44px;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-link::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-gold-dim), var(--accent-gold));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .page-link span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-link:hover {
+            border-color: var(--accent-gold);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .page-link:hover::before {
+            opacity: 0.15;
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--accent-gold-dim), var(--accent-gold));
+            border-color: var(--accent-gold);
+            color: var(--bg-primary);
+            font-weight: 700;
+        }
+
+        .page-item.active .page-link::before {
+            opacity: 0;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .video-row {
+                grid-template-columns: 240px repeat(5, 1fr);
+            }
+        }
+
+        @media (max-width: 992px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .video-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .video-info {
+                border-right: none;
+                border-bottom: 1px solid var(--border-subtle);
+                padding-bottom: 1rem;
+                padding-right: 0;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+  <script src="/userProtect.js"></script>
+        <h1>Studio Index</h1>
+        <p class="subtitle">Sign Language Video Archive</p>
+    </header>
+
+    <!-- Sticky Filters -->
+    <div class="filters-container">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label for="dateSelect" class="filter-label">Filter by Date</label>
+                <div class="custom-select">
+                    <select id="dateSelect">
+                        <option value="">All Dates</option>
+                        <!-- Dates will be dynamically injected here via AJAX -->
+                    </select>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="videoCountSelect" class="filter-label">Video Display</label>
+                <div class="custom-select">
+                    <select id="videoCountSelect">
+                        <option value="1">1 Video (Center)</option>
+                        <option value="3" selected>3 Videos (L-M-R)</option>
+                        <option value="5">5 Videos (All)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div id="statusInfo" style="margin-top: 1rem; font-size: 0.95rem; color: #4ade80; font-weight: 600; line-height: 1.6;"></div>
+    </div>
+
+    <div id="videoGrid">
+        <!-- Videos will be dynamically injected here via AJAX -->
+    </div>
+
+    <nav aria-label="Page navigation" class="pagination-container">
+        <ul class="pagination" id="pagination">
+            <!-- Pagination links will be dynamically injected here via AJAX -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+    let currentlyPlayingRow = null;
+
+    function loadVideos(page = 1, date = '', videoCount = 1) {
+        // Show loading indicator
+        const videoGrid = document.getElementById('videoGrid');
+        videoGrid.innerHTML = `
+            <div class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Loading videos...</p>
+            </div>
+        `;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `getStudioFiles.php?page=${page}&date=${date}`, true);
+
+        // Add error handler for network failures
+        xhr.onerror = function() {
+            videoGrid.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Network Error</strong>
+                    Could not connect to server. Please check your connection and try again.
+                </div>
+            `;
+        };
+
+        xhr.onload = function() {
+            if (this.status === 200) {
+                let response;
+                try {
+                    response = JSON.parse(this.responseText);
+                } catch (e) {
+                    videoGrid.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Parse Error</strong>
+                            Invalid response from server. Please try again.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Check for server errors
+                if (response.error) {
+                    videoGrid.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Server Error</strong>
+                            ${response.error}
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Check for empty results
+                if (!response.videos || response.videos.length === 0) {
+                    videoGrid.innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>No videos found</strong>
+                            Try adjusting your date filter.
+                        </div>
+                    `;
+                    document.getElementById('pagination').innerHTML = '';
+                    return;
+                }
+
+                // Populate the date select menu with dates if it's empty
+                const dateSelect = document.getElementById('dateSelect');
+                if (dateSelect.children.length === 1 && response.dates) {
+                    response.dates.forEach((date, index) => {
+                        const option = document.createElement('option');
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+
+                    // Auto-select and load the latest date (first in list)
+                    if (response.dates.length > 0 && page === 1 && !date) {
+                        dateSelect.value = response.dates[0];
+                        fetchStatus(response.dates[0]);
+                        // Reload with the latest date
+                        loadVideos(1, response.dates[0], videoCount);
+                        return; // Exit to prevent processing the "All Dates" response
+                    }
+                }
+
+                // Get the selected number of videos to display
+                const selectedVideoCount = parseInt(videoCount);
+
+                // Clear previous content
+                videoGrid.innerHTML = '';
+
+                response.videos.forEach((video, videoIndex) => {
+                    const row = document.createElement('div');
+                    row.className = 'video-row';
+                    row.style.animationDelay = `${videoIndex * 0.05}s`;
+
+                    // First column with ID, transcription and gloss
+                    const infoCol = document.createElement('div');
+                    infoCol.className = 'video-info';
+
+                    const title = document.createElement('div');
+                    title.className = 'video-title';
+                    title.textContent = `${video.id} — ${video.m_transcription}`;
+
+                    const meta = document.createElement('div');
+                    meta.className = 'video-meta';
+                    meta.textContent = video.glos || 'No gloss available';
+
+                    infoCol.appendChild(title);
+                    infoCol.appendChild(meta);
+                    row.appendChild(infoCol);
+
+                    // Columns for video files
+                    const videoFiles = video.files;
+
+                    // Determine which videos to display based on selectedVideoCount
+                    let videosToDisplay = [];
+                    if (selectedVideoCount === 1) {
+                        videosToDisplay = videoFiles.filter(file => file.filename && file.filename.startsWith('M'));
+                    } else if (selectedVideoCount === 3) {
+                        videosToDisplay = videoFiles.filter(file =>
+                            file.filename && ['L', 'M', 'R'].some(prefix => file.filename.startsWith(prefix))
+                        );
+                    } else if (selectedVideoCount === 5) {
+                        videosToDisplay = videoFiles; // All videos
+                    }
+
+                    // Create 5 columns for all video positions
+                    for (let i = 0; i < 5; i++) {
+                        const col = document.createElement('div');
+                        col.className = 'video-col';
+
+                        const img = document.createElement('img');
+                        const videoFile = videoFiles[i];
+
+                        if (videoFile) {
+                            // Try post thumbnail first
+                            img.src = videoFile.post.replace('.mp4', '.jpg');
+                            img.alt = `Camera ${i + 1}`;
+
+                            // Fallback: try raw thumbnail, then SVG placeholder
+                            img.onerror = function() {
+                                if (img.src.includes('/post/')) {
+                                    img.src = videoFile.raw.replace('.mp4', '.jpg');
+                                } else {
+                                    // Elegant placeholder
+                                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%231e1e21" width="100" height="100"/%3E%3C/svg%3E';
+                                }
+                            };
+                        } else {
+                            img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%231e1e21" width="100" height="100"/%3E%3C/svg%3E';
+                            img.alt = 'No video';
+                        }
+
+                        col.appendChild(img);
+                        row.appendChild(col);
+                    }
+
+                    // Add event listeners for hover effect to load and play videos
+                    row.addEventListener('mouseenter', function() {
+                        // If currentlyPlayingRow is not this row, remove videos from previous row
+                        if (currentlyPlayingRow && currentlyPlayingRow !== row) {
+                            const previousVideos = currentlyPlayingRow.querySelectorAll('video');
+                            previousVideos.forEach(video => {
+                                video.pause();
+                                video.remove();
+                            });
+                        }
+
+                        currentlyPlayingRow = row;
+
+                        const videoCols = row.querySelectorAll('.video-col');
+
+                        // Load and play videos based on the selectedVideoCount
+                        videosToDisplay.forEach(file => {
+                            const baseName = file.filename.split('.')[0];
+                            const col = Array.from(videoCols).find(c => {
+                                const imgSrc = c.querySelector('img').src;
+                                return imgSrc.includes(baseName);
+                            });
+
+                            if (col && !col.querySelector('video')) {
+                                const videoElement = document.createElement('video');
+                                videoElement.autoplay = true;
+                                videoElement.muted = true;
+                                videoElement.loop = true;
+
+                                // Add both sources - browser will try post first, then raw
+                                const sourcePost = document.createElement('source');
+                                sourcePost.src = file.post;
+                                sourcePost.type = 'video/mp4';
+
+                                const sourceRaw = document.createElement('source');
+                                sourceRaw.src = file.raw;
+                                sourceRaw.type = 'video/mp4';
+
+                                videoElement.appendChild(sourcePost);
+                                videoElement.appendChild(sourceRaw);
+                                col.appendChild(videoElement);
+
+                                // Handle the play promise
+                                videoElement.play().catch(error => {
+                                    console.error('Video play failed:', error);
+                                    videoElement.remove();
+                                });
+                            }
+                        });
+                    });
+
+                    // Remove videos on mouse leave
+                    row.addEventListener('mouseleave', function() {
+                        const videos = row.querySelectorAll('video');
+                        videos.forEach(video => {
+                            video.pause();
+                            video.remove();
+                        });
+                        currentlyPlayingRow = null;
+                    });
+
+                    videoGrid.appendChild(row);
+                });
+
+                // Process the pagination
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+
+                for (let i = 1; i <= response.pagination.totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === response.pagination.currentPage ? 'active' : ''}`;
+
+                    const a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.setAttribute('data-page', i);
+                    a.innerHTML = `<span>${i}</span>`;
+
+                    li.appendChild(a);
+                    pagination.appendChild(li);
+                }
+            } else {
+                videoGrid.innerHTML = `
+                    <div class="alert alert-warning">
+                        <strong>HTTP ${this.status}</strong>
+                        Failed to load videos. Please try again.
+                    </div>
+                `;
+            }
+        };
+        xhr.send();
+    }
+
+    function fetchStatus(date) {
+        const statusDiv = document.getElementById('statusInfo');
+        if (!date) {
+            statusDiv.innerHTML = '';
+            return;
+        }
+        const url = 'getDateStatus.php?date=' + encodeURIComponent(date);
+        statusDiv.innerHTML = '<span style="color:orange">Loading...</span>';
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onerror = function() {
+            statusDiv.innerHTML = '<span style="color:red">Network error</span>';
+        };
+        xhr.onload = function() {
+            if (this.status === 200) {
+                try {
+                    const d = JSON.parse(this.responseText);
+                    if (d.error) {
+                        statusDiv.innerHTML = '<span style="color:red">' + d.error + '</span>';
+                        return;
+                    }
+                    const f = d.files;
+                    let html = 'CameraRecords: ' + d.camera_records + ' | Matched: ' + d.matched
+                        + ' | Validated: ' + d.validated + ' | Missing: ' + d.missing
+                        + ' | PostProcessed: ' + d.post_processed;
+                    html += '<br>Files — L: ' + f.l_file.present + '/' + d.matched
+                        + ' | M: ' + f.m_file.present + '/' + d.matched
+                        + ' | R: ' + f.r_file.present + '/' + d.matched
+                        + ' | A: ' + f.a_file.present + '/' + d.matched
+                        + ' | B: ' + f.b_file.present + '/' + d.matched;
+                    const msgs = [];
+                    if (Math.abs(d.camera_records - d.matched) <= 5) {
+                        msgs.push('Alle videobestanden aanwezig op signcollect server');
+                    }
+                    if (Math.abs(d.matched - d.post_processed) <= 5) {
+                        msgs.push('Alles gerendered');
+                    }
+                    if (msgs.length > 0) {
+                        html += '<br>' + msgs.join(' · ');
+                    }
+                    statusDiv.innerHTML = html;
+                } catch(e) {
+                    statusDiv.innerHTML = '<span style="color:red">Parse error: ' + e.message + '</span>';
+                }
+            } else {
+                statusDiv.innerHTML = '<span style="color:red">HTTP ' + this.status + '</span>';
+            }
+        };
+        xhr.send();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoCountSelect = document.getElementById('videoCountSelect');
+        const dateSelect = document.getElementById('dateSelect');
+
+        function getSelectedVideoCount() {
+            return videoCountSelect.value;
+        }
+
+        // Initial load - will auto-select latest date after dates are loaded
+        loadVideos(1, '', getSelectedVideoCount());
+
+        // Handle pagination clicks
+        document.getElementById('pagination').addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' || e.target.tagName === 'SPAN') {
+                e.preventDefault();
+                const link = e.target.tagName === 'A' ? e.target : e.target.parentElement;
+                const page = link.getAttribute('data-page');
+                const date = dateSelect.value;
+                const videoCount = getSelectedVideoCount();
+                loadVideos(page, date, videoCount);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // Handle date filter changes
+        dateSelect.addEventListener('change', function() {
+            const date = this.value;
+            const videoCount = getSelectedVideoCount();
+            loadVideos(1, date, videoCount);
+            fetchStatus(date);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Handle video count selection changes
+        videoCountSelect.addEventListener('change', function() {
+            const videoCount = this.value;
+            const date = dateSelect.value;
+            loadVideos(1, date, videoCount);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+</script>
+</body>
+</html>

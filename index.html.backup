@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Sticky Filters */
+        .sticky-filters {
+            position: sticky;
+            top: 0;
+            background-color: #fff; /* Ensure background is opaque */
+            padding-top: 10px;
+            padding-bottom: 10px;
+            z-index: 1000; /* Ensure it stays above other content */
+            border-bottom: 1px solid #dee2e6; /* Optional: Add a border for separation */
+        }
+
+        .video-row {
+            height: 350px; /* Fixed height for each row */
+            overflow: hidden; /* Ensure content doesn't overflow */
+        }
+        .video-col {
+            position: relative;
+            cursor: pointer;
+        }
+        .video-col img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%; /* Set the video height to fill the column */
+            width: 100%; /* Set the video width to fill the column */
+            display: none; /* Hide video by default */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-3">
+    <h1 class="mb-4">Video Files</h1>
+
+    <!-- Sticky Filters -->
+    <div class="row mb-4 sticky-filters">
+        <div class="col-md-6">
+            <label for="dateSelect" class="form-label">Filter by Date:</label>
+            <select id="dateSelect" class="form-select">
+                <option value="">All Dates</option>
+                <!-- Dates will be dynamically injected here via AJAX -->
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="videoCountSelect" class="form-label">Number of Videos to Display:</label>
+            <select id="videoCountSelect" class="form-select">
+                <option value="1" selected>1 Video</option>
+                <option value="3">3 Videos</option>
+                <option value="5" >5 Videos</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="videoGrid" class="row g-4">
+        <!-- Videos will be dynamically injected here via AJAX -->
+    </div>
+
+    <nav aria-label="Page navigation example" class="mt-4">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Pagination links will be dynamically injected here via AJAX -->
+        </ul>
+    </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentlyPlayingRow = null;
+
+    function loadVideos(page = 1, date = '', videoCount = 1) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `getStudioFiles.php?page=${page}&date=${date}`, true);
+        xhr.onload = function() {
+            if (this.status === 200) {
+                const response = JSON.parse(this.responseText);
+
+                // Populate the date select menu with dates if it's empty
+                const dateSelect = document.getElementById('dateSelect');
+                if (dateSelect.children.length === 1 && response.dates) {
+                    response.dates.forEach(date => {
+                        const option = document.createElement('option');
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+                }
+
+                // Get the selected number of videos to display
+                const selectedVideoCount = parseInt(videoCount);
+
+                // Process the videos
+                const videoGrid = document.getElementById('videoGrid');
+                videoGrid.innerHTML = ''; // Clear previous content
+
+                response.videos.forEach(video => {
+                    const row = document.createElement('div');
+                    row.className = 'row video-row'; // Add class 'video-row' for fixed height
+
+                    // First column with transcription and gloss
+                    const col1 = document.createElement('div');
+                    col1.className = 'col-2 d-flex align-items-center';
+                    const title = document.createElement('h5');
+                    title.textContent = `${video.m_transcription} - ${video.glos}`;
+                    col1.appendChild(title);
+                    row.appendChild(col1);
+
+                    // Columns for video files
+                    const videoFiles = video.files; // Assuming video.files is an array of file paths
+
+                    // Determine which videos to display based on selectedVideoCount
+                    let videosToDisplay = [];
+                    if (selectedVideoCount === 1) {
+                        videosToDisplay = videoFiles.filter(file => file.startsWith('https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/M'));
+                        console.log(videoFiles);
+                    } else if (selectedVideoCount === 3) {
+                        videosToDisplay = videoFiles.filter(file => ['https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/L', 'https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/M', 'https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/R'].some(prefix => file.startsWith(prefix)));
+                    } else if (selectedVideoCount === 5) {
+                        videosToDisplay = videoFiles; // All videos
+                    }
+
+                    // Always create 5 columns for still images
+                    for (let i = 0; i < 5; i++) {
+                        const col = document.createElement('div');
+                        col.className = 'col-2 video-col';
+
+                        const img = document.createElement('img');
+                        const videoFile = videoFiles[i];
+                        if (videoFile) {
+                            img.src = videoFile.replace('.mp4', '.jpg'); // Replace .mp4 with .jpg
+                            img.alt = `Thumbnail ${i + 1}`;
+                        } else {
+                            img.src = 'placeholder.jpg'; // Fallback image if no video
+                            img.alt = 'No Thumbnail';
+                        }
+
+                        col.appendChild(img);
+                        row.appendChild(col);
+                    }
+
+                    // Add event listeners for hover effect to load and play videos
+                    row.addEventListener('mouseenter', function() {
+                        // If currentlyPlayingRow is not this row, remove videos from previous row
+                        if (currentlyPlayingRow && currentlyPlayingRow !== row) {
+                            const previousVideos = currentlyPlayingRow.querySelectorAll('video');
+                            previousVideos.forEach(video => {
+                                video.pause(); // Pause the video before removing
+                                video.remove();
+                            });
+                        }
+
+                        currentlyPlayingRow = row;
+
+                        const videoCols = row.querySelectorAll('.video-col');
+
+                        // Load and play videos based on the selectedVideoCount
+                        videosToDisplay.forEach(file => {
+                            const baseName = file.split('/').pop().split('.')[0];
+                            const col = Array.from(videoCols).find(c => {
+                                const imgSrc = c.querySelector('img').src;
+                                return imgSrc.includes(baseName);
+                            });
+
+                            if (col && !col.querySelector('video')) {
+                                const videoElement = document.createElement('video');
+                                videoElement.autoplay = true; // Add autoplay attribute
+                                videoElement.muted = true; // Mute the video to allow autoplay without user interaction
+                                videoElement.loop = true; // Ensure the video keeps playing
+                                videoElement.style.display = 'block'; // Show video
+
+                                const source = document.createElement('source');
+                                source.src = file;
+                                source.type = 'video/mp4';
+
+                                videoElement.appendChild(source);
+                                col.appendChild(videoElement);
+
+                                // Handle the play promise
+                                videoElement.play().catch(error => {
+                                    console.error('Video play failed:', error);
+                                    // Optionally, remove the video element if play fails
+                                    videoElement.remove();
+                                });
+                            }
+                        });
+                    });
+
+                    // Remove videos on mouse leave
+                    row.addEventListener('mouseleave', function() {
+                        const videos = row.querySelectorAll('video');
+                        videos.forEach(video => {
+                            video.pause(); // Pause the video before removing
+                            video.remove();
+                        });
+                        currentlyPlayingRow = null;
+                    });
+
+                    videoGrid.appendChild(row);
+                });
+
+                // Process the pagination
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = ''; // Clear previous content
+
+                for (let i = 1; i <= response.pagination.totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === response.pagination.currentPage ? 'active' : ''}`;
+                    
+                    const a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.setAttribute('data-page', i);
+                    a.textContent = i;
+
+                    li.appendChild(a);
+                    pagination.appendChild(li);
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoCountSelect = document.getElementById('videoCountSelect');
+
+        function getSelectedVideoCount() {
+            return videoCountSelect.value;
+        }
+
+        // Initial load with default video count
+        loadVideos(1, '', getSelectedVideoCount());
+
+        // Handle pagination clicks
+        document.getElementById('pagination').addEventListener('click', function(e) {
+            if (e.target.tagName === 'A') {
+                e.preventDefault();
+                const page = e.target.getAttribute('data-page');
+                const date = document.getElementById('dateSelect').value;
+                const videoCount = getSelectedVideoCount();
+                loadVideos(page, date, videoCount);
+                // Scroll to top to keep filters visible
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // Handle date filter changes
+        document.getElementById('dateSelect').addEventListener('change', function() {
+            const date = this.value;
+            const videoCount = getSelectedVideoCount();
+            loadVideos(1, date, videoCount); // Load the first page of videos for the selected date
+            // Scroll to top to keep filters visible
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Handle video count selection changes
+        videoCountSelect.addEventListener('change', function() {
+            const videoCount = this.value;
+            const page = 1;
+            const date = document.getElementById('dateSelect').value;
+            loadVideos(page, date, videoCount);
+            // Scroll to top to keep filters visible
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+</script>
+</body>
+</html>
