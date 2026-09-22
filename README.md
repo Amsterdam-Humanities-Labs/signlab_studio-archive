@@ -1,33 +1,35 @@
-# studioIndex
-Browse the studio archive by date: every take recorded on a day, all five camera angles, plus a per-date completeness check.
+# signlab_studioIndex
+Browse the studio archive by date: every take of a day, all five camera angles, and a completeness check per date.
 
 ## What it does
-| file | does | used by |
+| File | Does | Used by |
 |---|---|---|
-| `index.html` | cards per `matched_transcriptions` row: gloss/sentence + 1, 3 or 5 players; thumbnails from the `.jpg` beside each `.mp4` (`post/`, fallback `raw/`) | browser |
-| `api.php?page=N[&date=]` | paged list (100/page) + distinct dates from `m_file` (`M20260331_…` → `20260331`) | `index.html` |
-| `api.php?date=YYYYMMDD` | full unpaged list for a date; no `date` → HTTP 400 + `available_dates` | `signlab_videoBackgroundFix` (do not change this shape) |
-| `getDateStatus.php?date=` | `CameraRecords` vs `matched_transcriptions`: validated, missing gloss ids, per-camera counts, post-processed | `index.html` |
+| `index.html` | one card per `matched_transcriptions` row: the gloss or sentence and 1, 3 or 5 players. Thumbnails are the `.jpg` next to each `.mp4` (`post/`, else `raw/`) | browser |
+| `api.php?page=N[&date=]` | list of 100 takes per page, plus the distinct dates in `m_file` (`M20260331_…` gives `20260331`) | `index.html` |
+| `api.php?date=YYYYMMDD` | the full list for one date, not paged. Without `date` it returns HTTP 400 and `available_dates` | [signlab_videoBackgroundFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix). Do not change this shape |
+| `getDateStatus.php?date=` | compares `CameraRecords` with `matched_transcriptions`: validated, missing gloss ids, counts per camera, post-processed | `index.html` |
 
-Read-only: no write path.
+It only reads; nothing writes.
 
 ## Where it runs
-- Production VPS: `/web/studioIndex`, https://signcollect.nl/studioIndex/
+- Production: core server, `/web/studioIndex`, <https://signcollect.nl/studioIndex/>.
 - Demo: dev2 `/web/studioIndex`, dev-1 `/srv/signcollect/web/studioIndex`.
-- Media URLs are hardcoded to `https://signcollect.nl/gebarenoverleg_media/studioFilesMini/{post,raw}/`; demo deploys rewrite them (`rewrite-urls.sh`), so a demo checkout is dirty. Do not commit from a docroot.
+- Media URLs are hardcoded to `https://signcollect.nl/gebarenoverleg_media/studioFilesMini/{post,raw}/`. Demo deploys rewrite them (`rewrite-urls.sh`), so a demo checkout has local changes. Do not commit from a docroot.
 
 ## Status
 Production.
 
 ## How to run / deploy
-No build step. Deployed by `signlab_signcollect-stack` (`repos.tsv`: `studioIndex	signlab_studioIndex	main`; fetch → reset --hard → clean → rewrite-urls):
-https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack
+There is no build step. The stack deploys `main` (`repos.tsv` line `studioIndex	signlab_studioIndex	main`).
+It runs fetch, `reset --hard`, clean, then `rewrite-urls.sh`. See
+[signlab_signcollect-stack](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack).
 
 ## Configuration
-- `../mysql_config.php`, one level above this directory (e.g. `/web/mysql_config.php`), defining `$servername`, `$username`, `$password`, `$database`. A copy inside this directory does nothing. On deployed hosts it is the stack's `web_extra/mysql_config.php` shim reading `/web/.env`.
+- `../mysql_config.php`, one level above this directory (for example `/web/mysql_config.php`). It defines `$servername`, `$username`, `$password` and `$database`.
+- A copy inside this directory does nothing. On deployed hosts the file is the stack's `web_extra/mysql_config.php` shim, which reads `/web/.env`.
 
 ## Dependencies
-- MySQL `admin_gebarenoverleg`: `matched_transcriptions`, `CameraRecords`, `form_data`, `nmm_data`, `sentences` (read-only).
+- MySQL `admin_gebarenoverleg`: reads `matched_transcriptions`, `CameraRecords`, `form_data`, `nmm_data`, `sentences`.
 - Media over HTTP from `gebarenoverleg_media/studioFilesMini/{post,raw}/`.
-- `/userProtect.js` guards `index.html`; the PHP endpoints have no auth.
-- `signlab_videoBackgroundFix` consumes `api.php?date=`.
+- `/userProtect.js` guards `index.html`. The PHP endpoints have no login check.
+- signlab_videoBackgroundFix calls `api.php?date=`.
