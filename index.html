@@ -578,7 +578,7 @@
         `;
 
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', `getStudioFiles.php?page=${page}&date=${date}`, true);
+        xhr.open('GET', `api.php?page=${page}&date=${date}`, true);
 
         // Add error handler for network failures
         xhr.onerror = function() {
