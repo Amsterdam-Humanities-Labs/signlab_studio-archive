@@ -1,4 +1,4 @@
-# signlab_studioIndex
+# signlab_studio-archive
 Browse the studio archive by date: every take of a day, all five camera angles, and a completeness check per date.
 
 ## What it does
@@ -6,7 +6,7 @@ Browse the studio archive by date: every take of a day, all five camera angles, 
 |---|---|---|
 | `index.html` | one card per `matched_transcriptions` row: the gloss or sentence and 1, 3 or 5 players. Thumbnails are the `.jpg` next to each `.mp4` (`post/`, else `raw/`) | browser |
 | `api.php?page=N[&date=]` | list of 100 takes per page, plus the distinct dates in `m_file` (`M20260331_…` gives `20260331`) | `index.html` |
-| `api.php?date=YYYYMMDD` | the full list for one date, not paged. Without `date` it returns HTTP 400 and `available_dates` | [signlab_videoBackgroundFix](https://github.com/Amsterdam-Humanities-Labs/signlab_videoBackgroundFix). Do not change this shape |
+| `api.php?date=YYYYMMDD` | the full list for one date, not paged. Without `date` it returns HTTP 400 and `available_dates` | [signlab_background-fix](https://github.com/Amsterdam-Humanities-Labs/signlab_background-fix). Do not change this shape |
 | `getDateStatus.php?date=` | compares `CameraRecords` with `matched_transcriptions`: validated, missing gloss ids, counts per camera, post-processed | `index.html` |
 
 It only reads; nothing writes.
@@ -20,7 +20,7 @@ It only reads; nothing writes.
 Production.
 
 ## How to run / deploy
-There is no build step. The stack deploys `main` (`repos.tsv` line `studioIndex	signlab_studioIndex	main`).
+There is no build step. The stack deploys `main` (`repos.tsv` line `studioIndex	signlab_studio-archive	main`).
 It runs fetch, `reset --hard`, clean, then `rewrite-urls.sh`. See
 [signlab_signcollect-stack](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack).
 
@@ -32,4 +32,4 @@ It runs fetch, `reset --hard`, clean, then `rewrite-urls.sh`. See
 - MySQL `admin_gebarenoverleg`: reads `matched_transcriptions`, `CameraRecords`, `form_data`, `nmm_data`, `sentences`.
 - Media over HTTP from `gebarenoverleg_media/studioFilesMini/{post,raw}/`.
 - `/userProtect.js` guards `index.html`. The PHP endpoints have no login check.
-- signlab_videoBackgroundFix calls `api.php?date=`.
+- signlab_background-fix calls `api.php?date=`.

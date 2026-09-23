@@ -4,7 +4,7 @@
  * -----------------
  * Two modes, one query:
  *
- * Unpaged (signlab_videoBackgroundFix relies on this shape; do not change it):
+ * Unpaged (signlab_background-fix relies on this shape; do not change it):
  *   GET api.php?date=20260331        -> JSON array of videos for that date
  *   GET api.php?date=2026-03-31      -> same (dashed format also accepted)
  *   GET api.php                      -> 400 { "error": ..., "available_dates": [...] }
@@ -183,7 +183,7 @@ if (isset($_GET['page'])) {
     exit;
 }
 
-// ---- Unpaged mode (signlab_videoBackgroundFix) -----------------------------
+// ---- Unpaged mode (signlab_background-fix) -----------------------------
 // Normalise the date filter to the 8-digit YYYYMMDD form used inside m_file.
 $rawDate = isset($_GET['date']) ? trim($_GET['date']) : '';
 $dateFilter = preg_replace('/\D/', '', $rawDate);
