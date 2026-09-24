@@ -33,3 +33,10 @@ It runs fetch, `reset --hard`, clean, then `rewrite-urls.sh`. See
 - Media over HTTP from `gebarenoverleg_media/studioFilesMini/{post,raw}/`.
 - `/userProtect.js` guards `index.html`. The PHP endpoints have no login check.
 - signlab_background-fix calls `api.php?date=`.
+
+## License and citation
+
+Apache License 2.0, copyright University of Amsterdam: see [LICENSE](LICENSE) and
+[NOTICE](NOTICE). You may use it, also commercially, as long as you credit
+Gomer Otterspeer / University of Amsterdam as the source. To cite it, use
+[CITATION.cff](CITATION.cff) (the *Cite this repository* button on GitHub) or the DOI [10.21942/uva.33980392](https://doi.org/10.21942/uva.33980392).
